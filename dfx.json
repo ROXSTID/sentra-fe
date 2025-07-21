@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "sentra-fe_ic-backend": {
+      "main": "src/sentra-fe_ic-backend/main.mo",
+      "type": "motoko"
+    },
+    "sentra-fe_ic-frontend": {
+      "dependencies": [
+        "sentra-fe_ic-backend"
+      ],
+      "source": [
+        "src/sentra-fe_ic-frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "sentra-fe_ic-frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
