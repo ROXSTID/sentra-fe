@@ -3,12 +3,26 @@
 import { useState } from "react"
 import { Menu, X, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useAuthContext } from "@/components/auth-provider"
 
 export default function Page() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { loginWithDemo, isLoading, error, clearError, isAuthenticated, user } = useAuthContext()
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen)
+  }
+
+  const handleTryDemo = async () => {
+    console.log('Try Demo clicked - starting authentication...')
+    console.log('Current auth state:', { isAuthenticated, user, isLoading, error })
+    try {
+      await loginWithDemo()
+      console.log('Demo login completed successfully')
+    } catch (error) {
+      console.error('Demo login failed:', error)
+      // Don't clear the error here, let the hook handle it
+    }
   }
 
   return (
@@ -72,9 +86,10 @@ export default function Page() {
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               <Button
                 className="bg-[#B10100] hover:bg-[#810100] text-white font-medium py-3 px-8 rounded-lg"
-                onClick={() => (window.location.href = "/dashboard")}
+                onClick={handleTryDemo}
+                disabled={isLoading}
               >
-                Try Demo
+                {isLoading ? 'Logging in...' : 'Try Demo'}
               </Button>
               <Button
                 variant="outline"
@@ -83,6 +98,21 @@ export default function Page() {
                 Contact Sales
               </Button>
             </div>
+            
+            {/* Error Display */}
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <p className="text-red-600 text-sm">{error}</p>
+                  <button
+                    onClick={clearError}
+                    className="text-red-400 hover:text-red-600 text-sm font-medium"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="md:w-1/2">
             <div className="bg-[#F8F8F8] rounded-xl shadow-lg p-6">

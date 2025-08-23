@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Bell,
   User,
@@ -13,12 +13,57 @@ import {
   Settings,
   Download,
   Flag,
+  LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { useAuthContext } from "@/components/auth-provider"
+import { useRouter } from "next/navigation"
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
+  const { user, isAuthenticated, isLoading, logout } = useAuthContext()
+  const router = useRouter()
+
+  // Check authentication on mount
+  useEffect(() => {
+    console.log('Dashboard: Authentication state:', { isAuthenticated, user, isLoading })
+    
+    // Don't redirect while still loading
+    if (isLoading) {
+      console.log('Dashboard: Still loading auth state, waiting...')
+      return
+    }
+    
+    if (!isAuthenticated) {
+      console.log('Dashboard: Not authenticated, redirecting to home')
+      router.push('/')
+    }
+  }, [isAuthenticated, isLoading, router, user])
+
+  // Show loading if checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B10100] mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    )
+  }
+  
+  // Show loading if not authenticated (but not loading)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#B10100] mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    )
+  }
 
   const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3, active: true },
@@ -124,12 +169,27 @@ export default function Dashboard() {
             <Bell className="h-5 w-5 text-black" />
             <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
-          <div className="flex items-center space-x-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-              <User className="h-4 w-4 text-black" />
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-full bg-[#B10100] flex items-center justify-center">
+                <User className="h-4 w-4 text-white" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-medium block">
+                  {user?.first_name || user?.email || 'Demo User'}
+                </span>
+                <span className="text-xs text-gray-500 block">Demo Account</span>
+              </div>
             </div>
-            <span className="text-sm font-medium">Admin</span>
-            <ChevronDown className="h-3 w-3 text-gray-500" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="border-[#B10100] text-[#B10100] hover:bg-[#B10100] hover:text-white"
+            >
+              <LogOut className="h-4 w-4 mr-1" />
+              Logout
+            </Button>
           </div>
         </div>
       </header>
