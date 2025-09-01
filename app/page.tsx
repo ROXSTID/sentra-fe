@@ -31,10 +31,10 @@ export default function Page() {
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center relative">
         <div className="flex items-center">
           <h1 className="text-2xl font-bold">SENTRA</h1>
-          <span className="ml-2 bg-[#510100] text-white rounded-full px-3 py-1 text-sm">by Roxvest</span>
+          <span className="ml-2 bg-[#510100] text-white rounded-full px-3 py-1 text-sm">by ROXST</span>
         </div>
 
-        <div className={`nav-links ${mobileMenuOpen ? "active" : ""} hidden md:flex space-x-8`}>
+        <div className={`nav-links ${mobileMenuOpen ? "active" : ""} hidden md:flex space-x-8 items-center`}>
           <a href="#features" className="hover:text-[#B10100] transition-colors">
             Features
           </a>
@@ -46,6 +46,12 @@ export default function Page() {
           </a>
           <a href="#contact" className="hover:text-[#B10100] transition-colors">
             Contact
+          </a>
+          <a href="/login" className="text-[#B10100] hover:text-[#810100] font-medium transition-colors">
+            Login
+          </a>
+          <a href="/register" className="bg-[#B10100] text-white px-4 py-2 rounded-lg hover:bg-[#810100] font-medium transition-colors">
+            Sign Up
           </a>
         </div>
 
@@ -65,6 +71,16 @@ export default function Page() {
               <a href="#contact" className="hover:text-[#B10100] transition-colors" onClick={toggleMobileMenu}>
                 Contact
               </a>
+              <div className="border-t border-gray-200 pt-4 mt-4">
+                <div className="flex flex-col space-y-3">
+                  <a href="/login" className="text-[#B10100] hover:text-[#810100] font-medium transition-colors" onClick={toggleMobileMenu}>
+                    Login
+                  </a>
+                  <a href="/register" className="bg-[#B10100] text-white px-4 py-2 rounded-lg hover:bg-[#810100] font-medium transition-colors text-center" onClick={toggleMobileMenu}>
+                    Sign Up
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -98,7 +114,7 @@ export default function Page() {
                 Contact Sales
               </Button>
             </div>
-            
+
             {/* Error Display */}
             {error && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -427,7 +443,7 @@ export default function Page() {
             <div className="mb-8 md:mb-0">
               <div className="flex items-center mb-4">
                 <h3 className="text-2xl font-bold">SENTRA</h3>
-                <span className="ml-2 bg-white text-[#510100] rounded-full px-3 py-1 text-sm">by Roxvest</span>
+                <span className="ml-2 bg-white text-[#510100] rounded-full px-3 py-1 text-sm">by ROXST</span>
               </div>
               <p className="text-gray-300">AI-powered crisis detection for modern businesses</p>
             </div>
@@ -465,7 +481,7 @@ export default function Page() {
             </div>
           </div>
           <div className="border-t border-gray-600 mt-8 pt-8 text-center text-gray-300">
-            <p>&copy; 2024 SENTRA by Roxvest. All rights reserved.</p>
+            <p>&copy; 2024 SENTRA by ROXST. All rights reserved.</p>
           </div>
         </div>
       </footer>

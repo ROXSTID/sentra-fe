@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { authService, type AuthResponse, type LoginCredentials } from '@/lib/auth.service';
+import { authService, type AuthResponse, type LoginCredentials, type RegisterPayload } from '@/lib/auth.service';
 
 export interface AuthState {
   isAuthenticated: boolean;
@@ -11,6 +11,7 @@ export interface AuthState {
 export interface UseAuthReturn extends AuthState {
   loginWithDemo: () => Promise<void>;
   login: (credentials: LoginCredentials) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -118,6 +119,33 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
+  // Register new user
+  const register = useCallback(async (payload: RegisterPayload) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      const response = await authService.register(payload);
+
+      setState(prev => ({
+        ...prev,
+        isAuthenticated: true,
+        user: response.user,
+        isLoading: false,
+        error: null,
+      }));
+
+      // Redirect to dashboard after successful register
+      window.location.href = '/dashboard';
+    } catch (error) {
+      console.error('Register failed:', error);
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Register failed',
+      }));
+    }
+  }, []);
+
   // Logout
   const logout = useCallback(async () => {
     setState(prev => ({ ...prev, isLoading: true }));
@@ -154,6 +182,7 @@ export function useAuth(): UseAuthReturn {
     ...state,
     loginWithDemo,
     login,
+    register,
     logout,
     clearError,
   };

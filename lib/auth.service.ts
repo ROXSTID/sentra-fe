@@ -5,22 +5,31 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export interface UserProfile {
+  id: number;
+  email: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  role?: string;
+  is_active?: boolean;
+  email_verified?: boolean;
+  last_login?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface AuthResponse {
   message: string;
-  user: {
-    id: number;
-    email: string;
-    username: string;
-    first_name: string;
-    last_name: string;
-    full_name: string;
-    role: string;
-    is_active: boolean;
-    email_verified: boolean;
-    last_login: string;
-    created_at: string;
-    updated_at: string;
-  };
+  user: UserProfile;
   tokens: {
     access: string;
     refresh: string;
@@ -42,6 +51,8 @@ class AuthService {
   /**
    * API Endpoints used:
    * - POST {baseUrl}api/v1/auth/login/     - Login with credentials
+   * - POST {baseUrl}api/v1/auth/register/  - Register a new account
+   * - GET  {baseUrl}api/v1/auth/me/        - Get current profile
    * - POST {baseUrl}api/v1/auth/refresh/   - Refresh access token
    * - POST {baseUrl}api/v1/auth/logout/    - Logout (optional)
    */
@@ -108,7 +119,8 @@ class AuthService {
       });
 
       if (!response.ok) {
-        throw new Error(`Login failed: ${response.status} ${response.statusText}`);
+        const errorText = await response.text()
+        throw new Error(`Login failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data: AuthResponse = await response.json();
@@ -127,6 +139,79 @@ class AuthService {
       console.error('Login error:', error);
       throw error;
     }
+  }
+
+  /**
+   * Register a new user
+   */
+  async register(payload: RegisterPayload): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${this.baseUrl}api/v1/auth/register/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Register failed: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data: AuthResponse = await response.json();
+
+      // If tokens are returned, store them; otherwise try logging in
+      if (data.tokens?.access && data.tokens?.refresh) {
+        this.storeTokens({ access: data.tokens.access, refresh: data.tokens.refresh });
+      }
+      if (data.user) {
+        this.storeUser(data.user);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Register error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch current user profile
+   */
+  async getProfile(): Promise<UserProfile> {
+    const authHeader = this.getAuthHeader();
+    if (!authHeader) throw new Error('Not authenticated');
+
+    const response = await fetch(`${this.baseUrl}api/v1/auth/me/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+      },
+    });
+
+    if (response.status === 401) {
+      // attempt refresh once
+      const newToken = await this.refreshToken().catch(() => null);
+      if (!newToken) throw new Error('Session expired');
+      const retry = await fetch(`${this.baseUrl}api/v1/auth/me/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${newToken}`,
+        },
+      });
+      if (!retry.ok) throw new Error('Failed to load profile');
+      return retry.json();
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to load profile: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    return response.json();
   }
 
   /**
@@ -207,6 +292,17 @@ class AuthService {
         return { access, refresh };
       }
       return null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Convenience: get raw access token
+   */
+  getAccessToken(): string | null {
+    try {
+      return localStorage.getItem('access_token');
     } catch {
       return null;
     }

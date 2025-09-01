@@ -14,16 +14,21 @@ import {
   Download,
   Flag,
   LogOut,
+  RefreshCw,
+  Twitter,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useAuthContext } from "@/components/auth-provider"
 import { useRouter } from "next/navigation"
+import { useDashboard } from "@/hooks/use-dashboard"
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard")
   const { user, isAuthenticated, isLoading, logout } = useAuthContext()
   const router = useRouter()
+  const { stats, isLoading: statsLoading, error: statsError, refetch } = useDashboard()
 
   // Check authentication on mount
   useEffect(() => {
@@ -140,6 +145,40 @@ export default function Dashboard() {
     },
   ]
 
+  // Mock data for Spike Monitor chart
+  const spikeMonitorData = {
+    labels: [
+      "00:00", "04:00", "08:00", "12:00", "16:00", "20:00"
+    ],
+    datasets: [
+      {
+        name: "Twitter",
+        data: [12, 5, 15, 45, 89, 54],
+        color: "#1DA1F2"
+      },
+      {
+        name: "Instagram",
+        data: [8, 4, 12, 38, 71, 48],
+        color: "#E4405F"
+      },
+      {
+        name: "TikTok",
+        data: [5, 2, 8, 32, 58, 38],
+        color: "#000000"
+      },
+      {
+        name: "News",
+        data: [3, 1, 6, 25, 45, 32],
+        color: "#FF6B35"
+      }
+    ],
+    totalMentions: 1248,
+    spikeDetected: true,
+    spikeTime: "16:00",
+    spikePlatform: "Twitter",
+    spikePercentage: 89
+  }
+
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case "twitter":
@@ -161,7 +200,7 @@ export default function Dashboard() {
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center">
           <h1 className="text-xl font-bold text-[#B10100]">
-            SENTRA <span className="font-normal text-black">by Roxvest</span>
+            SENTRA <span className="font-normal text-black">by ROXST</span>
           </h1>
         </div>
         <div className="flex items-center space-x-4">
@@ -203,7 +242,13 @@ export default function Dashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.id === "settings") {
+                      router.push('/settings')
+                    } else {
+                      setActiveTab(item.id)
+                    }
+                  }}
                   className={`w-full flex items-center px-4 py-2 rounded-lg transition-colors ${
                     activeTab === item.id ? "bg-[#B10100] text-white" : "hover:bg-[#FDEBEB] text-black"
                   }`}
@@ -218,6 +263,39 @@ export default function Dashboard() {
 
         {/* Main Content */}
         <main className="flex-1 p-6 bg-white text-black">
+          {/* Dashboard Header with Refresh */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-[#B10100]">Dashboard Overview</h1>
+            <Button 
+              onClick={refetch} 
+              disabled={statsLoading}
+              variant="outline" 
+              className="border-[#B10100] text-[#B10100] hover:bg-[#FDEBEB]"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${statsLoading ? 'animate-spin' : ''}`} />
+              {statsLoading ? 'Refreshing...' : 'Refresh Data'}
+            </Button>
+          </div>
+
+          {/* Error Display */}
+          {statsError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+                <span className="text-red-800 font-medium">Error loading dashboard data:</span>
+              </div>
+              <p className="text-red-700 mt-1">{statsError}</p>
+              <Button 
+                onClick={refetch} 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <Card className="bg-white shadow-md border border-gray-100">
@@ -225,8 +303,10 @@ export default function Dashboard() {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-gray-600 text-sm">Total Mentions</p>
-                    <h3 className="text-2xl font-bold mt-1">1,248</h3>
-                    <p className="text-green-500 text-sm mt-2">Today</p>
+                    <h3 className="text-2xl font-bold mt-1">
+                      {statsLoading ? '...' : stats?.total_mentions || 0}
+                    </h3>
+                    <p className="text-green-500 text-sm mt-2">Real-time</p>
                   </div>
                   <div className="bg-green-100 p-3 rounded-full">
                     <MessageCircle className="h-5 w-5 text-green-600" />
@@ -240,8 +320,10 @@ export default function Dashboard() {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-gray-600 text-sm">Negative Sentiment</p>
-                    <h3 className="text-2xl font-bold mt-1">23%</h3>
-                    <p className="text-yellow-500 text-sm mt-2">+2% from yesterday</p>
+                    <h3 className="text-2xl font-bold mt-1">
+                      {statsLoading ? '...' : `${stats?.negative_percentage || 0}%`}
+                    </h3>
+                    <p className="text-yellow-500 text-sm mt-2">Current</p>
                   </div>
                   <div className="bg-yellow-100 p-3 rounded-full">
                     <span className="text-yellow-600 text-xl">😞</span>
@@ -254,24 +336,86 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="text-gray-600 text-sm">Active Crisis Alerts</p>
-                    <h3 className="text-2xl font-bold mt-1">4</h3>
-                    <p className="text-red-500 text-sm mt-2">1 High Priority</p>
+                    <p className="text-gray-600 text-sm">Sentiment Distribution</p>
+                    <h3 className="text-2xl font-bold mt-1">
+                      {statsLoading ? '...' : `${stats?.sentiment_counts?.positive || 0} / ${stats?.sentiment_counts?.neutral || 0} / ${stats?.sentiment_counts?.negative || 0}`}
+                    </h3>
+                    <p className="text-green-500 text-sm mt-2">Pos/Neu/Neg</p>
                   </div>
-                  <div className="bg-red-100 p-3 rounded-full">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Latest Tweets Section */}
+          <Card className="shadow-md mb-6 bg-white border border-gray-100">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Latest Mentions</h2>
+                <div className="flex items-center space-x-2">
+                  <Twitter className="h-5 w-5 text-blue-500" />
+                  <span className="text-sm text-gray-600">Real-time Twitter data</span>
+                </div>
+              </div>
+              
+              {statsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#B10100]"></div>
+                  <span className="ml-2 text-gray-600">Loading mentions...</span>
+                </div>
+              ) : stats?.latest_tweets && stats.latest_tweets.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.latest_tweets.map((tweet, index) => (
+                    <div key={tweet.id} className="border-b border-gray-100 pb-4 last:border-b-0">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Twitter className="h-5 w-5 text-blue-600" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className="font-medium text-sm text-black">@{tweet.username}</span>
+                            <Badge 
+                              variant={
+                                tweet.sentiment === 'positive' ? 'default' : 
+                                tweet.sentiment === 'negative' ? 'destructive' : 
+                                'secondary'
+                              }
+                              className="text-xs"
+                            >
+                              {tweet.sentiment}
+                            </Badge>
+                            <span className="text-xs text-gray-500">
+                              {new Date(tweet.date).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-800 leading-relaxed">{tweet.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Twitter className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                  <p>No mentions available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Chart Section */}
             <Card className="lg:col-span-2 bg-white shadow-md border border-gray-100">
               <CardContent className="p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Spike Monitor</h2>
+                  <div>
+                    <h2 className="text-lg font-semibold">Spike Monitor</h2>
+                  </div>
                   <div className="flex space-x-4">
                     <select className="bg-gray-100 border-0 rounded-md px-3 py-1 text-sm">
                       <option>All Platforms</option>
@@ -287,11 +431,29 @@ export default function Dashboard() {
                     </select>
                   </div>
                 </div>
+                
+                {/* Chart Visualization */}
                 <div className="h-64 rounded-lg bg-gray-50 border border-gray-200 p-4 flex items-center justify-center">
                   <div className="text-center">
-                    <TrendingUp className="h-12 w-12 text-gray-500 mx-auto mb-2" />
-                    <p className="text-gray-600">Real-time mentions visualization</p>
-                    <p className="text-sm text-gray-500 mt-1">Chart shows spike in mentions over time</p>
+                    <TrendingUp className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg font-medium mb-2">No Data Available</p>
+                    <p className="text-sm text-gray-400">Start monitoring keywords to see spike data</p>
+                  </div>
+                </div>
+                
+                {/* Summary Stats */}
+                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-400">--</p>
+                    <p className="text-xs text-gray-500">Total Mentions</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-400">--</p>
+                    <p className="text-xs text-gray-500">Peak Time</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-400">--</p>
+                    <p className="text-xs text-gray-500">Top Platform</p>
                   </div>
                 </div>
               </CardContent>
